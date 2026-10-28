@@ -13,102 +13,53 @@
 ## Architecture Overview
 
   
-
-```text
-
+```
 SERVER (20 Hz Tick)
-
-|
-
-[Authoritative Current State #S]
-
-|
-
-v
-
-[Acknowledged Baseline #B] ------> [Field Diff Engine]
-
-(From 256-Slot RingBuffer) |
-
-v
-
-[10-bit Dirty Bitmask]
-
-|
-
-v
-
-[BitWriter: LSB-First BitStream]
-
-(Quantized Floats & Attributes)
-
-|
-
-v
-
-[PacketHeader: Seq #S, Base #B]
-
-|
-
-(Raw UDP Datagram)
-
-|
-
-v
-
+                                                |
+                             [Authoritative Current State #S]
+                                                |
+                                                v
+    [Acknowledged Baseline #B] ------> [Field Diff Engine]
+    (From 256-Slot RingBuffer)                  |
+                                                v
+                                    [10-bit Dirty Bitmask]
+                                                |
+                                                v
+                              [BitWriter: LSB-First BitStream]
+                               (Quantized Floats & Attributes)
+                                                |
+                                                v
+                                  [PacketHeader: Seq #S, Base #B]
+                                                |
+                                      (Raw UDP Datagram)
+                                                |
+                                                v
 ==================================== UNRELIABLE INTERNET / WAN ====================================
-
-|
-
-v
-
-CLIENT (Replication)
-
-|
-
-[ProcessSnapshotPacket()]
-
-|
-
-+----------------------------------+----------------------------------+
-
-| |
-
-v v
-
-[RFC 1982 Sequence Check] [Fetch Baseline #B from]
-
-(Discard Out-of-Order / Duplicates) [Local RingBuffer]
-
-| |
-
-+----------------------------------+----------------------------------+
-
-|
-
-v
-
-[BitReader: DeserializeDelta]
-
-(Dequantize Dirty Fields Only)
-
-|
-
-v
-
-[Reconstructed Authoritative State]
-
-(Stored in Local Client RingBuffer)
-
-|
-
-v
-
-[Immediate UDP ACK for #S] ----------------------> (Server Updates
-
-Client Baseline)
-
-  
+                                                |
+                                                v
+                                      CLIENT (Replication)
+                                                |
+                                   [ProcessSnapshotPacket()]
+                                                |
+             +----------------------------------+----------------------------------+
+             |                                                                     |
+             v                                                                     v
+  [RFC 1982 Sequence Check]                                            [Fetch Baseline #B from]
+  (Discard Out-of-Order / Duplicates)                                    [Local RingBuffer]
+             |                                                                     |
+             +----------------------------------+----------------------------------+
+                                                |
+                                                v
+                                  [BitReader: DeserializeDelta]
+                                  (Dequantize Dirty Fields Only)
+                                                |
+                                                v
+                               [Reconstructed Authoritative State]
+                               (Stored in Local Client RingBuffer)
+                                                |
+                                                v
+                                  [Immediate UDP ACK for #S] ----------------------> (Server Updates
+                                                                                      Client Baseline)
 
 ```
 
